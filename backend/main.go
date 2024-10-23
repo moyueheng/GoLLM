@@ -354,7 +354,7 @@ func clearConversationMessages(c *gin.Context) {
 
 func getSystemInfo(c *gin.Context) {
 	info := gin.H{
-		"model": config.Ollama.Model,
+		"model":   config.Ollama.Model,
 		"version": "1.0.0", // 假设的版本号
 		// 可以添加其他系统信息
 	}
@@ -415,14 +415,14 @@ func main() {
 	r := gin.Default()
 
 	// 设置路由
-	r.POST("/api/chat_message", chatMessage)                    // 处理聊天消息
-	r.GET("/api/conversations", getAllConversations)            // 获取所有会话
-	r.DELETE("/api/conversations/:id", deleteConversation)      // 删除指定会话
-	r.GET("/api/conversations/:id/messages", getConversationMessages) // 获取指定会话的所有消息
+	r.POST("/api/chat_message", chatMessage)                               // 处理聊天消息
+	r.GET("/api/conversations", getAllConversations)                       // 获取所有会话
+	r.DELETE("/api/conversations/:id", deleteConversation)                 // 删除指定会话
+	r.GET("/api/conversations/:id/messages", getConversationMessages)      // 获取指定会话的所有消息
 	r.DELETE("/api/conversations/:id/messages", clearConversationMessages) // 清空指定会话的所有消息
-	r.GET("/api/system_info", getSystemInfo)                    // 获取系统信息
-	r.GET("/api/conversations/:id", getConversation)            // 获取指定会话的详细信息
-	r.PUT("/api/conversations/:id/name", updateConversationName) // 更新指定会话的名称
+	r.GET("/api/system_info", getSystemInfo)                               // 获取系统信息
+	r.GET("/api/conversations/:id", getConversation)                       // 获取指定会话的详细信息
+	r.PUT("/api/conversations/:id/name", updateConversationName)           // 更新指定会话的名称
 
 	// 启动服务器，监听 8081 端口
 	r.Run(":8081")
