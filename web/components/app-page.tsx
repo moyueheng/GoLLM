@@ -86,25 +86,42 @@ export function AppPage() {
   const handleNewConversation = async () => {
     if (!newConversationName.trim()) return
 
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/chat_message`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ question: `${newConversationName}` }),
-    })
-    const data = await response.json()
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/chat_message`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: `${newConversationName}` }),
+      })
+      const data = await response.json()
 
-    const newConversation: Conversation = {
-      id: data.conversation_id,
-      name: newConversationName,
-      created_at: new Date().toISOString(),
-      messages: null
+      const newConversation: Conversation = {
+        id: data.conversation_id,
+        name: newConversationName,
+        created_at: new Date().toISOString(),
+        messages: null
+      }
+
+      // 更新会话列表
+      setConversations(prevConversations => [...prevConversations, newConversation])
+      
+      // 立即切换到新创建的会话
+      setCurrentConversation(data.conversation_id)
+      
+      // 清空消息列表，因为这是一个新会话
+      setMessages([])
+      
+      // 清空新会话名称输入
+      setNewConversationName('')
+      
+      // 获取新创建会话的消息（如果有的话）
+      await fetchMessages(data.conversation_id)
+      
+      // 重新获取所有会话列表
+      await fetchConversations()
+    } catch (error) {
+      console.error('创建新会话失败:', error)
+      // 这里可以添加错误处理，比如显示一个错误提示给用户
     }
-
-    setConversations([...conversations, newConversation])
-    setCurrentConversation(data.conversation_id)
-    setMessages([])
-    setNewConversationName('')
-    await fetchConversations()
   }
 
   // 修改 handleClearConversation 函数
