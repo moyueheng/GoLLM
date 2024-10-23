@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -50,35 +50,45 @@ export function AppPage() {
   const handleSendMessage = async () => {
     if (!input.trim()) return
 
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/chat_message`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ conversation_id: currentConversation, question: input }),
-    })
-    const data = await response.json()
-
     const newUserMessage: Message = {
       id: Date.now(),
-      conversation_id: currentConversation || data.conversation_id,
+      conversation_id: currentConversation || 0,
       sender: 'user',
       content: input,
       created_at: new Date().toISOString()
     }
 
-    const newAssistantMessage: Message = {
-      id: Date.now() + 1,
-      conversation_id: currentConversation || data.conversation_id,
-      sender: 'assistant',
-      content: data.answer,
-      created_at: new Date().toISOString()
-    }
-
-    setMessages([...messages, newUserMessage, newAssistantMessage])
+    // 立即添加用户消息到消息列表
+    setMessages(prevMessages => [...prevMessages, newUserMessage])
+    const sentMessage = input
     setInput('')
 
-    if (!currentConversation) {
-      setCurrentConversation(data.conversation_id)
-      await fetchConversations()
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/chat_message`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ conversation_id: currentConversation, question: sentMessage }),
+      })
+      const data = await response.json()
+
+      const newAssistantMessage: Message = {
+        id: Date.now() + 1,
+        conversation_id: currentConversation || data.conversation_id,
+        sender: 'assistant',
+        content: data.answer,
+        created_at: new Date().toISOString()
+      }
+
+      // 添加 AI 的回复到消息列表
+      setMessages(prevMessages => [...prevMessages, newAssistantMessage])
+
+      if (!currentConversation) {
+        setCurrentConversation(data.conversation_id)
+        await fetchConversations()
+      }
+    } catch (error) {
+      console.error('发送消息失败:', error)
+      // 这里可以添加错误处理，比如显示一个错误提示给用户
     }
   }
 
@@ -181,6 +191,16 @@ export function AppPage() {
     }
   }
 
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+  }
+
+  useEffect(() => {
+    scrollToBottom()
+  }, [messages])
+
   return (
     <div className="flex h-screen bg-gray-100">
       {/* 左侧会话列表 */}
@@ -278,6 +298,7 @@ export function AppPage() {
               </motion.div>
             ))}
           </AnimatePresence>
+          <div ref={messagesEndRef} /> {/* 添加这个空的div作为滚动的目标 */}
         </ScrollArea>
         
         {/* 输入区域 */}
@@ -290,7 +311,12 @@ export function AppPage() {
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+            onKeyPress={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault() // 防止表单提交
+                handleSendMessage()
+              }
+            }}
             placeholder="Type your message..."
             className="flex-1 mr-2"
           />
