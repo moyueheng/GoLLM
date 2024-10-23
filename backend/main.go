@@ -15,6 +15,7 @@ import (
 	"gopkg.in/yaml.v2"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+	"github.com/gin-contrib/cors"
 )
 
 // Conversation 用于管理和组织整个对话流程
@@ -414,6 +415,9 @@ func main() {
 	// 创建一个默认的 Gin 路由器
 	r := gin.Default()
 
+	// 添加 CORS 中间件
+	r.Use(cors.Default())
+
 	// 设置路由
 	r.POST("/api/chat_message", chatMessage)                               // 处理聊天消息
 	r.GET("/api/conversations", getAllConversations)                       // 获取所有会话
@@ -422,7 +426,7 @@ func main() {
 	r.DELETE("/api/conversations/:id/messages", clearConversationMessages) // 清空指定会话的所有消息
 	r.GET("/api/system_info", getSystemInfo)                               // 获取系统信息
 	r.GET("/api/conversations/:id", getConversation)                       // 获取指定会话的详细信息
-	r.PUT("/api/conversations/:id/name", updateConversationName)           // 更新指定会话的名称
+	r.PUT("/api/conversations/:id", updateConversationName)           // 更新指定会话的名称
 
 	// 启动服务器，监听 8081 端口
 	r.Run(":8081")
