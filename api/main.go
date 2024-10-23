@@ -153,7 +153,7 @@ func chatMessage(c *gin.Context) {
 			})
 			return
 		}
-		conversation.Name = strings.TrimSpace(completion)
+		conversation.Name = strings.Trim(strings.TrimSpace(completion), "\"")
 
 		db.Create(&conversation)
 	}

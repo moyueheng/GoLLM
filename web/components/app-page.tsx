@@ -50,35 +50,44 @@ export function AppPage() {
   const handleSendMessage = async () => {
     if (!input.trim()) return
 
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/chat_message`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ conversation_id: currentConversation, question: input }),
-    })
-    const data = await response.json()
-
     const newUserMessage: Message = {
       id: Date.now(),
-      conversation_id: currentConversation || data.conversation_id,
+      conversation_id: currentConversation || 0, // 如果没有当前会话，暂时使用0
       sender: 'user',
       content: input,
       created_at: new Date().toISOString()
     }
 
-    const newAssistantMessage: Message = {
-      id: Date.now() + 1,
-      conversation_id: currentConversation || data.conversation_id,
-      sender: 'assistant',
-      content: data.answer,
-      created_at: new Date().toISOString()
-    }
-
-    setMessages([...messages, newUserMessage, newAssistantMessage])
+    // 立即添加用户消息到消息列表
+    setMessages(prevMessages => [...prevMessages, newUserMessage])
     setInput('')
 
-    if (!currentConversation) {
-      setCurrentConversation(data.conversation_id)
-      await fetchConversations()
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/chat_message`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ conversation_id: currentConversation, question: input }),
+      })
+      const data = await response.json()
+
+      const newAssistantMessage: Message = {
+        id: Date.now() + 1,
+        conversation_id: currentConversation || data.conversation_id,
+        sender: 'assistant',
+        content: data.answer,
+        created_at: new Date().toISOString()
+      }
+
+      // 添加 AI 的回复到消息列表
+      setMessages(prevMessages => [...prevMessages, newAssistantMessage])
+
+      if (!currentConversation) {
+        setCurrentConversation(data.conversation_id)
+        await fetchConversations()
+      }
+    } catch (error) {
+      console.error('发送消息失败:', error)
+      // 这里可以添加错误处理，比如显示一个错误提示给用户
     }
   }
 
